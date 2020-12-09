@@ -195,18 +195,16 @@ def main():
     #####################################################################
     # part (d)
     theta.sort()
-    plt.plot(range(len(theta)), sigmoid(theta - beta[0]), label='j1')
-    plt.plot(range(len(theta)), sigmoid(theta - beta[1]), label='j2')
-    plt.plot(range(len(theta)), sigmoid(theta - beta[2]), label='j3')
-    plt.plot(range(len(theta)), sigmoid(theta - beta[3]), label='j4')
-    plt.plot(range(len(theta)), sigmoid(theta - beta[4]), label='j5')
+    plt.plot(range(len(theta)), sigmoid(theta - beta[2]), label='j1')
+    plt.plot(range(len(theta)), sigmoid(theta - beta[4]), label='j2')
+    plt.plot(range(len(theta)), sigmoid(theta - beta[6]), label='j3')
+    plt.plot(range(len(theta)), sigmoid(theta - beta[8]), label='j4')
+    plt.plot(range(len(theta)), sigmoid(theta - beta[10]), label='j5')
     plt.xlabel("Thetas")
     plt.ylabel("Probability of Correct Response")
     plt.title("Probability of Correct Response Based on Theta")
     plt.legend()
     plt.show()
-
-
 
 if __name__ == "__main__":
     main()
