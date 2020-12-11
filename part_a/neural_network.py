@@ -104,6 +104,7 @@ def train(model, lr, lamb, train_data, zero_train_data, valid_data, num_epoch):
 
     train_loss_lst = []
     valid_acc_lst = []
+    valid_loss_lst = []
     best_model = None
     best_valid_acc = 0
 
@@ -126,18 +127,20 @@ def train(model, lr, lamb, train_data, zero_train_data, valid_data, num_epoch):
 
             train_loss += loss.item()
             # Q3(e): add the L2 regularization
-            train_loss += (lamb / 2) * (model.get_weight_norm())
+            if lamb is not None:
+                train_loss += (lamb / 2) * (model.get_weight_norm())
             optimizer.step()
 
-        valid_acc = evaluate(model, zero_train_data, valid_data)
+        valid_acc, valid_loss = evaluate(model, zero_train_data, valid_data)
         print("Epoch: {} \tTraining Cost: {:.6f}\t "
-              "Valid Acc: {}".format(epoch, train_loss, valid_acc))
+              "Valid Acc: {} \tValid Loss: {}".format(epoch, train_loss, valid_acc, valid_loss))
         train_loss_lst.append(train_loss)
         valid_acc_lst.append(valid_acc)
+        valid_loss_lst.append(valid_loss)
         if valid_acc > best_valid_acc:
             best_valid_acc = valid_acc
             best_model = model
-    return train_loss_lst, valid_acc_lst, best_model
+    return train_loss_lst, valid_acc_lst, valid_loss_lst, best_model
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -157,16 +160,18 @@ def evaluate(model, train_data, valid_data):
 
     total = 0
     correct = 0
+    sum_valid_loss = 0
 
     for i, u in enumerate(valid_data["user_id"]):
         inputs = Variable(train_data[u]).unsqueeze(0)
         output = model(inputs)
-
+        target = valid_data["is_correct"][i]
         guess = output[0][valid_data["question_id"][i]].item() >= 0.5
+        sum_valid_loss += (guess - target) ** 2
         if guess == valid_data["is_correct"][i]:
             correct += 1
         total += 1
-    return correct / float(total)
+    return correct / float(total), sum_valid_loss
 
 
 def main():
@@ -181,27 +186,27 @@ def main():
     k_vals = [10, 50, 100, 200, 500]
     lr = 0.01
     num_epoch = 50
-    lamb = 1
+    lamb = None
     max_valid_acc = 0
-    best_k = None
-    best_train_loss_lst = None
-    best_valid_acc_lst = None
-    final_best_model = None
+    best_k = 0
+    print("--------------Q3(c)----------------")
     for k in k_vals:
         print("---------" + str(k) + "---------")
         model = AutoEncoder(len(train_matrix[0]), k)
-        train_loss_lst, valid_acc_lst, best_model = train(model, lr, lamb,
-                                                          train_matrix,
-                                                          zero_train_matrix,
-                                                          valid_data, num_epoch)
-        valid_acc = evaluate(model, zero_train_matrix, valid_data)
+        train_loss_lst, valid_acc_lst, \
+        valid_loss_lst, best_model = train(model, lr, lamb, train_matrix,
+                                           zero_train_matrix, valid_data, num_epoch)
+        valid_acc, valid_loss = evaluate(model, zero_train_matrix, valid_data)
         if valid_acc > max_valid_acc:
             max_valid_acc = valid_acc
             best_k = k
-            best_train_loss_lst = train_loss_lst
-            best_valid_acc_lst = valid_acc_lst
-            final_best_model = best_model
 
+    print("--------------Q3(d)----------------")
+    model = AutoEncoder(len(train_matrix[0]), best_k)
+    best_train_loss_lst, best_valid_acc_lst, \
+    best_valid_loss_lst, final_best_model = train(model, lr, lamb, train_matrix,
+                                                  zero_train_matrix, valid_data,
+                                                  num_epoch)
     print("best k: {}".format(best_k))
     plt.xlabel("epoch")
     plt.ylabel("Training Cost")
@@ -215,9 +220,18 @@ def main():
     plt.plot(epoch, best_valid_acc_lst, label="Valid Acc")
     plt.savefig("Valid_Acc.png")
     plt.clf()
-    test_acc = evaluate(final_best_model, zero_train_matrix, test_data)
+
+    plt.xlabel("epoch")
+    plt.ylabel("Valid Loss")
+    plt.plot(epoch, best_valid_loss_lst, label="Valid Loss")
+    plt.savefig("Valid_Loss.png")
+    plt.clf()
+
+    test_acc, test_loss = evaluate(final_best_model, zero_train_matrix, test_data)
     print("final test accuracy: {}".format(test_acc))
 
+    print("--------------Q3(e)----------------")
+    max_valid_acc = 0
     lamb_lst = [0.001, 0.01, 0.1, 1]
     best_lamb = None
     final_best_model = None
@@ -225,18 +239,18 @@ def main():
     for lamb in lamb_lst:
         print("---------" + str(lamb) + "---------")
         model = AutoEncoder(len(train_matrix[0]), k)
-        train_loss_lst, valid_acc_lst, best_model = train(model, lr, lamb,
-                                                          train_matrix,
-                                                          zero_train_matrix,
-                                                          valid_data, num_epoch)
-        valid_acc = evaluate(model, zero_train_matrix, valid_data)
-        print(valid_acc)
+        train_loss_lst, valid_acc_lst, \
+        best_valid_loss_lst, best_model = train(model, lr, lamb, train_matrix,
+                                                zero_train_matrix, valid_data,
+                                                num_epoch)
+        valid_acc, valid_loss = evaluate(model, zero_train_matrix, valid_data)
         if valid_acc > max_valid_acc:
             max_valid_acc = valid_acc
             best_lamb = lamb
             final_best_model = best_model
-    print(best_lamb)
-    test_acc = evaluate(final_best_model, zero_train_matrix, test_data)
+    print("chosen lambda: {}".format(best_lamb))
+    print("final validation accuracy: {}".format(max_valid_acc))
+    test_acc, test_loss = evaluate(final_best_model, zero_train_matrix, test_data)
     print("final test accuracy: {}".format(test_acc))
     #####################################################################
     #                       END OF YOUR CODE                            #
