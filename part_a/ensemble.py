@@ -98,7 +98,7 @@ def ensemble(sample_datasets, val_data, test_data, lr, iterations, sparse_matrix
         val_pred_ll.append(val_prediction)
         test_prediction = predict(test_data, theta, beta)
         test_pred_ll.append(test_prediction)
-    avg_val_prediction = (val_prediction[0] + val_prediction[1] + val_prediction[2])/3
+    avg_val_prediction = (val_pred_ll[0] + val_pred_ll[1] + val_pred_ll[2])/3
     avg_test_prediction = (test_pred_ll[0] + test_pred_ll[1] + test_pred_ll[2])/3
 
     return avg_val_prediction, avg_test_prediction
@@ -127,6 +127,7 @@ def main():
     test_accuracy = evaluate(test_data, theta, beta)
     print("The final test accuracy on single base model is: " + str(test_accuracy))
 
+    # report the validation and test accuracies on bagging ensemble model
     avg_val_prediction, avg_test_prediction = ensemble(sample_datasets, val_data, test_data, lr, iterations, sparse_matrix)
     val_accuracy = evaluate_pred(avg_val_prediction, val_data)
     print("The final bagging validation accuracy is: " + str(val_accuracy))
