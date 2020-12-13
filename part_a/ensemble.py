@@ -9,8 +9,8 @@ from matplotlib.ticker import MaxNLocator
 
 def sample_with_replacement(train_data, sample_times):
     """
-    D : train_data, N: number of examples. Generate sample_times new datasets
-    with replacement.
+    Generate sample_times new datasets with replacement.
+    D : train_data, N: number of examples.
 
     :param sample_times: A dictionary {user_id: list, question_id: list,
     is_correct: list}
@@ -33,13 +33,14 @@ def sample_with_replacement(train_data, sample_times):
 
 
 def irt_base_model(sample_dataset, lr, iterations, sparse_matrix):
-    """
+    """ Train IRT model.
 
-    :param sample_dataset:
-    :param lr:
-    :param iterations:
-    :param sparse_matrix:
-    :return:
+    :param sample_dataset: A list of dictionary {user_id: list, question_id: list,
+    is_correct: list}
+    :param lr: float
+    :param iterations: int
+    :param sparse_matrix: 2D sparse matrix
+    :return: (theta, beta, val_acc_lst)
     """
     theta = np.random.random(sparse_matrix.shape[0])
     beta = np.random.random(sparse_matrix.shape[1])
@@ -52,6 +53,7 @@ def irt_base_model(sample_dataset, lr, iterations, sparse_matrix):
 
 def predict(data, theta, beta):
     """ Evaluate the model given data and return the accuracy.
+
     :param data: A dictionary {user_id: list, question_id: list,
     is_correct: list}
     :param theta: Vector
@@ -69,6 +71,7 @@ def predict(data, theta, beta):
 
 def evaluate_pred(pred, data):
     """ Evaluate the model given prediction and data and return the accuracy.
+
     :param pred: Vector
     :param data: A dictionary {user_id: list, question_id: list,
     is_correct: list}
@@ -81,13 +84,18 @@ def evaluate_pred(pred, data):
 
 def ensemble(sample_datasets, val_data, test_data, lr, iterations, sparse_matrix):
     """
+    Implement bagging ensemble. Return the average prediction.
 
-    :param sample_datasets:
-    :param val_data:
-    :param lr:
-    :param iterations:
-    :param sparse_matrix:
-    :return:
+    :param sample_datasets: A list of dictionary {user_id: list, question_id: list,
+    is_correct: list}
+    :param val_data: A dictionary {user_id: list, question_id: list,
+    is_correct: list}
+    :param test_data: A dictionary {user_id: list, question_id: list,
+    is_correct: list}
+    :param lr: float
+    :param iterations: int
+    :param sparse_matrix: 2D sparse matrix
+    :return: list of Vectors
     """
 
     val_pred_ll = []
@@ -110,22 +118,17 @@ def main():
     val_data = load_valid_csv("../data")
     test_data = load_public_test_csv("../data")
 
-    print("Sparse matrix:")
-    print(sparse_matrix)
-    print("Shape of sparse matrix:")
-    print(sparse_matrix.shape)
-
+    # Get three new dataset with bootstrapping the training set.
     sample_datasets = sample_with_replacement(train_data, 3)
-
     lr = 0.01
     iterations = 20
 
     theta, beta = irt_base_model(train_data, lr, iterations, sparse_matrix)
     # report the validation and test accuracies on single base model
     val_accuracy = evaluate(val_data, theta, beta)
-    print("The final validation accuracy on single base model is: " + str(val_accuracy))
+    print("The final validation accuracy on single base model (IRT) is: " + str(val_accuracy))
     test_accuracy = evaluate(test_data, theta, beta)
-    print("The final test accuracy on single base model is: " + str(test_accuracy))
+    print("The final test accuracy on single base model (IRT) is: " + str(test_accuracy))
 
     # report the validation and test accuracies on bagging ensemble model
     avg_val_prediction, avg_test_prediction = ensemble(sample_datasets, val_data, test_data, lr, iterations, sparse_matrix)
