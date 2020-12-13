@@ -11,6 +11,39 @@ import operator
 from datetime import datetime
 
 
+def pre_process_ques_data():
+    correctness = pd.read_csv('../data/train_data.csv', header=0, usecols=range(3))
+    print(correctness.head())
+
+    #  Group everything by question ID, and compute the total number of
+    #  correctness  and the average correctness for every question
+    ques_properties = correctness.groupby('question_id').agg({'is_correct': [np.size, np.mean]})
+    print(ques_properties.head())
+
+    # Create a new DataFrame that contains the normalized number of correctness.
+    # So, a value of 0 means nobody did it correctly, and a value of 1 will
+    # mean it's the most easy one to do.
+    ques_num_correctness = pd.DataFrame(ques_properties['is_correct']['mean'])
+    ques_norm_num_correctness = ques_num_correctness.apply(lambda x: (x - np.min(x)) / (np.max(x) - np.min(x)))
+    print(ques_norm_num_correctness.head())
+
+    return ques_properties, ques_num_correctness, ques_norm_num_correctness
+
+
+def pre_process_user_data():
+    correctness = pd.read_csv('../data/train_data.csv', header=0, usecols=range(3))
+    print(correctness.head())
+
+    user_properties = correctness.groupby('user_id').agg({'is_correct': [np.size, np.mean]})
+    print(user_properties.head())
+
+    user_num_correctness = pd.DataFrame(user_properties['is_correct']['mean'])
+    user_norm_num_correctness = user_num_correctness.apply(lambda x: (x - np.min(x)) / (np.max(x) - np.min(x)))
+    print(user_norm_num_correctness.head())
+
+    return user_properties, user_num_correctness, user_norm_num_correctness
+
+
 def collect_question_meta(ques_norm_num_correctness, ques_properties):
     question_dict = {}
     with open(r'../data/question_meta.csv', encoding="ISO-8859-1") as f:
@@ -138,29 +171,13 @@ def main():
     sparse_matrix = load_train_sparse("../data").toarray()
     val_data = load_valid_csv("../data")
     test_data = load_public_test_csv("../data")
-    r_cols = ['question_id', 'user_id', 'is_correct']
-    correctness = pd.read_csv('../data/train_data.csv', header=0, usecols=range(3))
-    print(correctness.head())
 
-    #  Group everything by question ID, and compute the total number of
-    #  correctness  and the average correctness for every question
-    ques_properties = correctness.groupby('question_id').agg({'is_correct': [np.size, np.mean]})
-    user_properties = correctness.groupby('user_id').agg({'is_correct': [np.size, np.mean]})
-    print(ques_properties.head())
-    print(user_properties.head())
-
-    # Create a new DataFrame that contains the normalized number of correctness.
-    # So, a value of 0 means nobody did it correctly, and a value of 1 will
-    # mean it's the most easy one to do.
-    ques_num_correctness = pd.DataFrame(ques_properties['is_correct']['mean'])
-    ques_norm_num_correctness = ques_num_correctness.apply(lambda x: (x - np.min(x)) / (np.max(x) - np.min(x)))
-    print(ques_norm_num_correctness.head())
-    user_num_correctness = pd.DataFrame(user_properties['is_correct']['mean'])
-    user_norm_num_correctness = user_num_correctness.apply(lambda x: (x - np.min(x)) / (np.max(x) - np.min(x)))
-    print(user_norm_num_correctness.head())
+    ques_properties, ques_num_correctness, ques_norm_num_correctness = pre_process_ques_data()
+    user_properties, user_num_correctness, user_norm_num_correctness = pre_process_user_data()
 
     question_dict = collect_question_meta(ques_norm_num_correctness, ques_properties)
     user_dict = collect_user_meta(user_norm_num_correctness, user_properties)
+
     valid_accu_values = []
     k_values = list(range(1, 10, 2))
     for K in range(1, 10, 2):
