@@ -97,7 +97,7 @@ def get_ques_neighbors(question_id, question_dict, K):
     avg_ques_correctness = 0
 
     for neighbor in neighbors:
-        avg_ques_correctness += question_dict[neighbor][4]
+        avg_ques_correctness += question_dict[neighbor][3]
     avg_ques_correctness /= K
     return avg_ques_correctness
 
@@ -126,7 +126,7 @@ def get_user_neighbors(user_id, user_dict, K):
     avg_user_correctness = 0
 
     for neighbor in neighbors:
-        avg_user_correctness += user_dict[neighbor][3]
+        avg_user_correctness += user_dict[neighbor][2]
     avg_user_correctness /= K
     return avg_user_correctness
 
@@ -177,6 +177,9 @@ def main():
 
     question_dict = collect_question_meta(ques_norm_num_correctness, ques_properties)
     user_dict = collect_user_meta(user_norm_num_correctness, user_properties)
+    # Examples:
+    # print(question_dict[1])
+    # print(user_dict[1])
 
     valid_accu_values = []
     k_values = list(range(1, 10, 2))
