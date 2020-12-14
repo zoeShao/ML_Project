@@ -135,7 +135,7 @@ def main():
     val_accuracy = evaluate_pred(avg_val_prediction, val_data)
     print("The final bagging validation accuracy is: " + str(val_accuracy))
     test_accuracy = evaluate_pred(avg_test_prediction, test_data)
-    print("The final bagging validation accuracy is: " + str(test_accuracy))
+    print("The final bagging test accuracy is: " + str(test_accuracy))
 
 
 if __name__ == "__main__":
