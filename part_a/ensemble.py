@@ -3,8 +3,6 @@ from utils import *
 from part_a.item_response import *
 import numpy as np
 from sklearn.utils import resample
-import matplotlib.pyplot as plt
-from matplotlib.ticker import MaxNLocator
 
 
 def sample_with_replacement(train_data, sample_times):
@@ -118,13 +116,15 @@ def main():
     val_data = load_valid_csv("../data")
     test_data = load_public_test_csv("../data")
 
+    print("Calculating...")
+
     # Get three new dataset with bootstrapping the training set.
     sample_datasets = sample_with_replacement(train_data, 3)
     lr = 0.01
     iterations = 20
 
     theta, beta = irt_base_model(train_data, lr, iterations, sparse_matrix)
-    # report the validation and test accuracies on single base model
+    # report the validation and test accuracies on single base model (IRT)
     val_accuracy = evaluate(val_data, theta, beta)
     print("The final validation accuracy on single base model (IRT) is: " + str(val_accuracy))
     test_accuracy = evaluate(test_data, theta, beta)
