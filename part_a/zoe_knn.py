@@ -130,8 +130,10 @@ def main():
 
     # Report the final test accuracy.
     nbrs = KNNImputer(n_neighbors=best_k)
-    mat = nbrs.fit_transform(sparse_matrix)
+    mat = np.transpose(nbrs.fit_transform(sparse_matrix.T))
     test_accu = sparse_matrix_evaluate(test_data, mat)
+    # mat = nbrs.fit_transform(sparse_matrix)
+    # test_accu = sparse_matrix_evaluate(test_data, mat)
     print("The final test accuracy is {}.".format(test_accu))
     #####################################################################
     #                       END OF YOUR CODE                            #
