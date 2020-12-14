@@ -6,6 +6,7 @@ import numpy as np
 from ast import literal_eval
 from scipy import spatial
 import operator
+from matplotlib.ticker import MaxNLocator
 
 
 def pre_process_ques_data():
@@ -13,7 +14,7 @@ def pre_process_ques_data():
     Pre-process the training dataset to gain the statistical property of
     the question data.
 
-    :return:
+    :return: DataFrame
     """
     correctness = pd.read_csv('../data/train_data.csv', header=0, usecols=range(3))
 
@@ -27,7 +28,7 @@ def pre_process_ques_data():
     ques_norm_correctness = ques_correctness.apply(lambda x: (x - np.min(x)) / (np.max(x) - np.min(x)))
     # print(ques_norm_correctness.head())
 
-    return ques_properties, ques_correctness, ques_norm_correctness
+    return ques_norm_correctness
 
 
 def pre_process_user_data():
@@ -35,7 +36,7 @@ def pre_process_user_data():
     Pre-process the training dataset to gain the statistical property of
     the student data.
 
-    :return:
+    :return: DataFrame
     """
     correctness = pd.read_csv('../data/train_data.csv', header=0, usecols=range(3))
 
@@ -46,10 +47,10 @@ def pre_process_user_data():
     user_norm_correctness = user_correctness.apply(lambda x: (x - np.min(x)) / (np.max(x) - np.min(x)))
     # print(user_norm_correctness.head())
 
-    return user_properties, user_correctness, user_norm_correctness
+    return user_norm_correctness
 
 
-def collect_question_meta(ques_norm_correctness, ques_properties):
+def collect_question_meta(ques_norm_correctness):
     """
     Collect more information about each question, like subjects. There are 388
     distinct subjects. Convert the subject list into an array that contains 388
@@ -57,7 +58,6 @@ def collect_question_meta(ques_norm_correctness, ques_properties):
     and 0 otherwise. Return a dictionary where keys are the question ids.
 
     :param ques_norm_correctness:
-    :param ques_properties:
     :return: A dictionary {question_id: tuple}
     """
     question_dict = {}
@@ -72,17 +72,16 @@ def collect_question_meta(ques_norm_correctness, ques_properties):
             # Convert the subject list into an array.
             for subject_id in subjects:
                 subject_lst[subject_id] = 1
-            question_dict[question_id] = (question_id, subjects, np.array(subject_lst), ques_norm_correctness.loc[question_id].get('mean'), ques_properties.loc[question_id].is_correct.get('mean'))
+            question_dict[question_id] = (question_id, subjects, np.array(subject_lst), ques_norm_correctness.loc[question_id].get('mean'))
     return question_dict
 
 
-def collect_user_meta(user_norm_correctness, user_properties):
+def collect_user_meta(user_norm_correctness):
     """
     Collect more information about each student, like gender.
     Return a dictionary where keys are the user ids.
 
     :param user_norm_correctness:
-    :param user_properties:
     :return: A dictionary {question_id: tuple}
     """
     user_dict = {}
@@ -92,7 +91,7 @@ def collect_user_meta(user_norm_correctness, user_properties):
             fields = line.rstrip('\n').split(',')
             user_id = int(fields[0])
             gender = int(fields[1])
-            user_dict[user_id] = (user_id, gender, user_norm_correctness.loc[user_id].get('mean'), user_properties.loc[user_id].is_correct.get('mean'))
+            user_dict[user_id] = (user_id, gender, user_norm_correctness.loc[user_id].get('mean'))
     return user_dict
 
 
@@ -252,17 +251,40 @@ def predict_all(sparse_matrix, val_data, question_dict, user_dict, k):
     return acc
 
 
+def plot_accu(data_accu_values):
+    """
+    Generate a plot showing the validation accuracy for k ∈ {1,6,11,16,21,26}.
+
+    :param data_accu_values: list of float
+    :return: None
+    """
+    plt.figure(figsize=(10, 6))
+    # Plotting the Training error points
+    x1, y1 = range(1, 10, 2), data_accu_values
+
+    plt.plot(x1, y1, color='blue', label='Validation', linestyle='dashed',
+             marker='o', markerfacecolor='blue', markersize=5)
+
+    plt.xlabel('k - Number of Nerest Neighbors')
+    plt.ylabel('Accuracy')
+    plt.gca().xaxis.set_major_locator(MaxNLocator(integer=True))
+    plt.xticks(np.arange(1, 10, 2))
+    plt.legend()
+    plt.savefig("partb_accuracy.png")
+    plt.show()
+
+
 def main():
     sparse_matrix = load_train_sparse("../data").toarray()
     val_data = load_valid_csv("../data")
     test_data = load_public_test_csv("../data")
 
     print("Calculating...")
-    ques_properties, ques_correctness, ques_norm_correctness = pre_process_ques_data()
-    user_properties, user_correctness, user_norm_correctness = pre_process_user_data()
+    ques_norm_correctness = pre_process_ques_data()
+    user_norm_correctness = pre_process_user_data()
 
-    question_dict = collect_question_meta(ques_norm_correctness, ques_properties)
-    user_dict = collect_user_meta(user_norm_correctness, user_properties)
+    question_dict = collect_question_meta(ques_norm_correctness)
+    user_dict = collect_user_meta(user_norm_correctness)
     # Examples:
     # print(question_dict[1])
     # print(user_dict[1])
@@ -275,6 +297,7 @@ def main():
         valid_accu = predict_all(sparse_matrix, val_data, question_dict, user_dict, k)
         print("Validation Accuracy: {}".format(valid_accu))
         valid_accu_values.append(valid_accu)
+    plot_accu(valid_accu_values)
 
     valid_accu_values = np.array(valid_accu_values)
     best_k = k_values[valid_accu_values.argmax()]
