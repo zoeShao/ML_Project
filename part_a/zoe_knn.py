@@ -81,10 +81,10 @@ def main():
     val_data = load_valid_csv("../data")
     test_data = load_public_test_csv("../data")
 
-    print("Sparse matrix:")
-    print(sparse_matrix)
-    print("Shape of sparse matrix:")
-    print(sparse_matrix.shape)
+    # print("Sparse matrix:")
+    # print(sparse_matrix)
+    # print("Shape of sparse matrix:")
+    # print(sparse_matrix.shape)
 
     #####################################################################
     # TODO:                                                             #
@@ -132,8 +132,6 @@ def main():
     nbrs = KNNImputer(n_neighbors=best_k)
     mat = np.transpose(nbrs.fit_transform(sparse_matrix.T))
     test_accu = sparse_matrix_evaluate(test_data, mat)
-    # mat = nbrs.fit_transform(sparse_matrix)
-    # test_accu = sparse_matrix_evaluate(test_data, mat)
     print("The final test accuracy is {}.".format(test_accu))
     #####################################################################
     #                       END OF YOUR CODE                            #
